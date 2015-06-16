@@ -142,7 +142,10 @@
         //debug
         this.ring = new FTRP.Ring(this.svgMain, this.center, [{value: 30, color: '#ff0000'}, {value: 50, color: '#00ff00'}, {value: 100, color: '#0000ff'}], 300, 280, 30);
         this.pie = new FTRP.Ring(this.svgMain, this.center, [{value: 30, color: '#ff0000'}, {value: 50, color: '#00ff00'}, {value: 100, color: '#0000ff'}], 260, 0, 180);
-        this.answer = {x: 100, y: 100};
+        this.answer = {
+            x: Math.round(Math.random() * this.normalizeFactor),
+            y: Math.round(Math.random() * this.normalizeFactor)
+        };
     };
 
     FTRP.Game.prototype.update = function () {
