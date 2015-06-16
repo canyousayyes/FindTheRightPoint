@@ -34,10 +34,19 @@
 
     FTRP.Ring.prototype.rotate = function (rotation) {
         if (typeof rotation !== "undefined") {
-            this.rotation = rotation;
+            this.rotation = rotation % 360;
         }
         this.updateTransform();
     };
+    
+    FTRP.Ring.prototype.getSectorValue = function (index) {
+        return this.sectors[index].value;
+    }
+
+    FTRP.Ring.prototype.setSectorValue = function (index, value) {
+        this.sectors[index].value = value;
+        this.drawSector();
+    }
 
     FTRP.Ring.prototype.updateTransform = function () {
         var transformString = "translate(" + this.center.x + "," + this.center.y + ") rotate(" + this.rotation + ",0,0)";
@@ -49,7 +58,7 @@
     };
     
     FTRP.Ring.prototype.drawInnerCircle = function () {
-        // Draw inner circle
+        this.svgInnerCircle.clear();
         if (this.innerRadius > 0) {
             this.svgInnerCircle.circle(this.innerRadius * 2).fill('#191919').center(0, 0);
         }
@@ -57,6 +66,7 @@
 
     FTRP.Ring.prototype.drawSector = function () {
         var self = this, sum = 0, startRadian = 0, endRadian = 0;
+        this.svgSector.clear();
         this.sectors.forEach(function (sector) {
             sum += sector.value;
         });
@@ -113,6 +123,7 @@
         requestAnimationFrame(function () {
             self.ring.rotate(self.ring.rotation - 1);
             self.pie.rotate(self.pie.rotation + 1);
+            self.pie.setSectorValue(0, self.pie.getSectorValue(0)+1);
         });
     };
 
