@@ -7,14 +7,14 @@
     var FTRP = {};
 
     // Ring Class
-    FTRP.Ring = function (container, center, sectors, outerRadius, innerRadius, rotation) {
+    FTRP.Ring = function (container, center, sectors, colors, outerRadius, innerRadius, rotation) {
         // Create a svg group inside the container, don't draw directly inside
         this.svgRing = container.group();
         this.svgSector = this.svgRing.group();
         this.svgInnerCircle = this.svgRing.group();
-        // sectors is an array of objects with angle and color
         this.center = center || {x: 0, y: 0};
         this.sectors = sectors || [];
+        this.colors = colors || [];
         this.outerRadius = outerRadius || 0;
         this.innerRadius = innerRadius || 0;
         this.rotation = rotation || 0;
@@ -39,15 +39,6 @@
         this.updateTransform();
     };
 
-    FTRP.Ring.prototype.getSectorValue = function (index) {
-        return this.sectors[index].value;
-    };
-
-    FTRP.Ring.prototype.setSectorValue = function (index, value) {
-        this.sectors[index].value = value;
-        this.drawSector();
-    };
-
     FTRP.Ring.prototype.updateTransform = function () {
         var transformString = "translate(" + this.center.x + "," + this.center.y + ") rotate(" + this.rotation + ",0,0)";
         this.svgRing.attr({transform: transformString});
@@ -68,12 +59,12 @@
         var self = this, sum = 0, startRadian = 0, endRadian = 0;
         this.svgSector.clear();
         this.sectors.forEach(function (sector) {
-            sum += sector.value;
+            sum += sector;
         });
         // Draw sectors
-        this.sectors.forEach(function (sector) {
+        this.sectors.forEach(function (sector, index) {
             var x1, y1, x2, y2, d;
-            endRadian = startRadian + self.getNormalizedRadian(sector.value, sum);
+            endRadian = startRadian + self.getNormalizedRadian(sector, sum);
 
             // Calculate start point
             x1 = Math.round(self.outerRadius * Math.cos(startRadian));
@@ -88,7 +79,7 @@
                     ((endRadian - startRadian > Math.PI) ? 1 : 0) + ',1 ' + x2 + ',' + y2 + ' z';
 
             // Draw sector
-            self.svgSector.path(d).fill(sector.color);
+            self.svgSector.path(d).fill(self.colors[index]);
 
             // Update for next iteration
             startRadian = endRadian;
@@ -116,13 +107,13 @@
         this.setUpdateCallback();
         this.createLevel();
     };
-    
+
     FTRP.Game.prototype.updateGeometry = function () {
         var rbox = this.svgMain.rbox();
         this.width = rbox.width;
         this.height = rbox.height;
         this.center = {x: Math.round(this.width / 2), y: Math.round(this.height / 2)};
-        this.normalizeFactor = 1000;
+        this.normalizeFactor = 500;
     };
 
     FTRP.Game.prototype.setUpdateCallback = function () {
@@ -140,8 +131,8 @@
 
     FTRP.Game.prototype.createLevel = function () {
         //debug
-        this.ring = new FTRP.Ring(this.svgMain, this.center, [{value: 30, color: '#ff0000'}, {value: 50, color: '#00ff00'}, {value: 100, color: '#0000ff'}], 300, 280, 30);
-        this.pie = new FTRP.Ring(this.svgMain, this.center, [{value: 30, color: '#ff0000'}, {value: 50, color: '#00ff00'}, {value: 100, color: '#0000ff'}], 260, 0, 180);
+        this.ring = new FTRP.Ring(this.svgMain, this.center, [30, 50, 100], ['#ff0000', '#00ff00', '#0000ff'], 300, 280, 30);
+        this.pie = new FTRP.Ring(this.svgMain, this.center, [30, 50, 100], ['#ff0000', '#00ff00', '#0000ff'], 260, 0, 180);
         this.answer = {
             x: Math.round(Math.random() * this.normalizeFactor),
             y: Math.round(Math.random() * this.normalizeFactor)
@@ -149,21 +140,20 @@
     };
 
     FTRP.Game.prototype.update = function () {
-        var self = this, position = self.getPiePosition();
-        window.requestAnimationFrame(function () {
-            self.pie.rotate(position.rotation);
-            //self.pie.setSectorValue(0, self.pie.getSectorValue(0) + 1);
-        });
-    };
-    
-    FTRP.Game.prototype.getPiePosition = function () {
-        // Calculate the rotation and the sector values based on the difference between cursor point and answer point
-        // If the difference is 0, then the rotation and the sector values of the ring and the pie will be same
-        var diff, rotation;
+        var self = this, diff;
+        // Calculate the Manhattan distance 
         diff = Math.abs(this.answer.x - this.cursor.x) + Math.abs(this.answer.y - this.cursor.y);
-        rotation = this.ring.rotation + 0.5 * diff;
-        console.log(this.cursor, diff, rotation);
-        return {rotation: rotation};
+        // Set rotation and sectors based on the difference between pie and ring
+        this.pie.rotation = this.ring.rotation + 0.5 * diff;
+        this.pie.sectors = this.pie.sectors.map(function (sector, index) {
+            return self.ring.sectors[index] + diff/(index + 1);
+        });
+        // Update the pie parameters
+        console.log(this.cursor, diff, this.pie.rotation, this.pie.sectors);
+        window.requestAnimationFrame(function () {
+            self.pie.rotate();
+            self.pie.drawSector();
+        });
     };
 
     // Create game instance and start
