@@ -101,27 +101,39 @@
         this.svgMain = null;
         this.ring = null;
         this.pie = null;
+        this.width = null;
+        this.height = null;
         this.center = null;
         this.answer = null;
         this.cursor = null;
+        this.normalizeFactor = null;
     };
 
     FTRP.Game.prototype.init = function (id) {
-        var rbox;
+        // Called at the start, create everything we need for the game.
         this.svgMain = new SVG(id).size('100%', '100%');
-
-        // Assign center value
-        rbox = this.svgMain.rbox();
-        this.center = {x: Math.round(rbox.width / 2), y: Math.round(rbox.height / 2)};
-
+        this.updateGeometry();
         this.setUpdateCallback();
         this.createLevel();
+    };
+    
+    FTRP.Game.prototype.updateGeometry = function () {
+        var rbox = this.svgMain.rbox();
+        this.width = rbox.width;
+        this.height = rbox.height;
+        this.center = {x: Math.round(this.width / 2), y: Math.round(this.height / 2)};
+        this.normalizeFactor = 1000;
     };
 
     FTRP.Game.prototype.setUpdateCallback = function () {
         var self = this;
         window.addEventListener('mousemove', function (e) {
-            self.cursor = {x: e.screenX, y: e.screenY};
+            // Normalize cursor position
+            // Upper Left: (0,0) Bottom right: (normalizeFactor, normalizeFactor)
+            self.cursor = {
+                x: Math.round(e.clientX * self.normalizeFactor / self.width),
+                y: Math.round(e.clientY * self.normalizeFactor / self.height)
+            };
             self.update();
         });
     };
@@ -134,12 +146,21 @@
     };
 
     FTRP.Game.prototype.update = function () {
-        var self = this;
+        var self = this, position = self.getPiePosition();
         window.requestAnimationFrame(function () {
-            self.ring.rotate(self.ring.rotation - 1);
-            self.pie.rotate(self.pie.rotation + 1);
-            self.pie.setSectorValue(0, self.pie.getSectorValue(0) + 1);
+            self.pie.rotate(position.rotation);
+            //self.pie.setSectorValue(0, self.pie.getSectorValue(0) + 1);
         });
+    };
+    
+    FTRP.Game.prototype.getPiePosition = function () {
+        // Calculate the rotation and the sector values based on the difference between cursor point and answer point
+        // If the difference is 0, then the rotation and the sector values of the ring and the pie will be same
+        var diff, rotation;
+        diff = Math.abs(this.answer.x - this.cursor.x) + Math.abs(this.answer.y - this.cursor.y);
+        rotation = this.ring.rotation + 0.5 * diff;
+        console.log(this.cursor, diff, rotation);
+        return {rotation: rotation};
     };
 
     // Create game instance and start
