@@ -7,17 +7,35 @@
     var FTRP = {};
 
     // Ring Class
-    FTRP.Ring = function (container, sectors, outerRadius, innerRadius, rotation) {
-        // Create a svg group inside the container, don't draw directly in the container
-        this.svgSector = container.group();
-        this.svgInnerCircle = container.group();
+    FTRP.Ring = function (container, center, sectors, outerRadius, innerRadius, rotation) {
+        // Create a svg group inside the container, don't draw directly inside
+        this.svgRing = container.group();
+        this.svgSector = this.svgRing.group();
+        this.svgInnerCircle = this.svgRing.group();
         // sectors is an array of objects with angle and color
+        this.center = center || {x: 0, y: 0};
         this.sectors = sectors || [];
         this.outerRadius = outerRadius || 0;
         this.innerRadius = innerRadius || 0;
         this.rotation = rotation || 0;
         // Draw the ring
         this.draw();
+        this.move();
+        this.rotate();
+    };
+    
+    FTRP.Ring.prototype.move = function (center) {
+        if (typeof center !== "undefined") {
+            this.center = center;
+        }
+        this.svgRing.move(this.center.x, this.center.y);
+    };
+    
+    FTRP.Ring.prototype.rotate = function (rotation) {
+        if (typeof rotation !== "undefined") {
+            this.rotation = rotation;
+        }
+        this.svgRing.rotate(this.rotation);
     };
 
     FTRP.Ring.prototype.getNormalizedRadian = function (value, sum) {
@@ -55,9 +73,6 @@
             startRadian = endRadian;
         });
 
-        // Apply rotation on sectors
-        //this.svgSector.rotate(this.rotation);
-
         // Draw inner circle
         if (this.innerRadius > 0) {
             this.svgInnerCircle.circle(this.innerRadius * 2).fill('#191919').center(0, 0);
@@ -67,24 +82,22 @@
     // Game Class
     FTRP.Game = function () {
         this.svgMain = null;
-        this.svgRing = null;
-        this.center = null;
         this.ring = null;
+        this.pie = null;
+        this.center = null;
     };
 
     FTRP.Game.prototype.init = function (id) {
         var rbox;
         this.svgMain = new SVG(id).size('100%', '100%');
-        this.svgRing = this.svgMain.group();
 
         // Assign center value
         rbox = this.svgMain.rbox();
         this.center = {x: Math.round(rbox.width / 2), y: Math.round(rbox.height / 2)};
-        this.svgRing.center(this.center.x, this.center.y);
 
         //debug
-        this.ring = new FTRP.Ring(this.svgRing, [{value: 30, color: '#ff0000'}, {value: 50, color: '#00ff00'}, {value: 100, color: '#0000ff'}], 100, 80, 30);
-        this.svgRing.rotate(450);
+        this.ring = new FTRP.Ring(this.svgMain, this.center, [{value: 30, color: '#ff0000'}, {value: 50, color: '#00ff00'}, {value: 100, color: '#0000ff'}], 100, 80, 50);
+        this.pie = new FTRP.Ring(this.svgMain, this.center, [{value: 30, color: '#ff0000'}, {value: 50, color: '#00ff00'}, {value: 100, color: '#0000ff'}], 60, 0, 80);
     };
 
     // Create game instance and start
