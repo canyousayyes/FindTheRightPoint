@@ -26,27 +26,27 @@
     };
 
     FTRP.Ring.prototype.move = function (center) {
-        if (typeof center !== "undefined") {
+        if (center !== undefined) {
             this.center = center;
         }
         this.updateTransform();
     };
 
     FTRP.Ring.prototype.rotate = function (rotation) {
-        if (typeof rotation !== "undefined") {
+        if (rotation !== undefined) {
             this.rotation = rotation % 360;
         }
         this.updateTransform();
     };
-    
+
     FTRP.Ring.prototype.getSectorValue = function (index) {
         return this.sectors[index].value;
-    }
+    };
 
     FTRP.Ring.prototype.setSectorValue = function (index, value) {
         this.sectors[index].value = value;
         this.drawSector();
-    }
+    };
 
     FTRP.Ring.prototype.updateTransform = function () {
         var transformString = "translate(" + this.center.x + "," + this.center.y + ") rotate(" + this.rotation + ",0,0)";
@@ -56,7 +56,7 @@
     FTRP.Ring.prototype.getNormalizedRadian = function (value, sum) {
         return Math.PI * 2 * value / sum;
     };
-    
+
     FTRP.Ring.prototype.drawInnerCircle = function () {
         this.svgInnerCircle.clear();
         if (this.innerRadius > 0) {
@@ -84,8 +84,8 @@
             y2 = Math.round(self.outerRadius * Math.sin(endRadian));
 
             // Construct path string
-            d = 'M0,0 L' + x1 + ',' + y1 + ' A' + self.outerRadius + ',' + self.outerRadius + ' 0 ' + 
-                ((endRadian - startRadian > Math.PI) ? 1 : 0) + ',1 ' + x2 + ',' + y2 + ' z';
+            d = 'M0,0 L' + x1 + ',' + y1 + ' A' + self.outerRadius + ',' + self.outerRadius + ' 0 ' +
+                    ((endRadian - startRadian > Math.PI) ? 1 : 0) + ',1 ' + x2 + ',' + y2 + ' z';
 
             console.log(startRadian, endRadian, x1, x2, y1, y2, d);
 
@@ -120,10 +120,10 @@
 
     FTRP.Game.prototype.move = function (x, y) {
         var self = this;
-        requestAnimationFrame(function () {
+        window.requestAnimationFrame(function () {
             self.ring.rotate(self.ring.rotation - 1);
             self.pie.rotate(self.pie.rotation + 1);
-            self.pie.setSectorValue(0, self.pie.getSectorValue(0)+1);
+            self.pie.setSectorValue(0, self.pie.getSectorValue(0) + 1);
         });
     };
 
