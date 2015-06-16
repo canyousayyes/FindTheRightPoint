@@ -87,8 +87,6 @@
             d = 'M0,0 L' + x1 + ',' + y1 + ' A' + self.outerRadius + ',' + self.outerRadius + ' 0 ' +
                     ((endRadian - startRadian > Math.PI) ? 1 : 0) + ',1 ' + x2 + ',' + y2 + ' z';
 
-            console.log(startRadian, endRadian, x1, x2, y1, y2, d);
-
             // Draw sector
             self.svgSector.path(d).fill(sector.color);
 
@@ -99,10 +97,13 @@
 
     // Game Class
     FTRP.Game = function () {
+        // Declare the variables
         this.svgMain = null;
         this.ring = null;
         this.pie = null;
         this.center = null;
+        this.answer = null;
+        this.cursor = null;
     };
 
     FTRP.Game.prototype.init = function (id) {
@@ -113,12 +114,26 @@
         rbox = this.svgMain.rbox();
         this.center = {x: Math.round(rbox.width / 2), y: Math.round(rbox.height / 2)};
 
+        this.setUpdateCallback();
+        this.createLevel();
+    };
+
+    FTRP.Game.prototype.setUpdateCallback = function () {
+        var self = this;
+        window.addEventListener('mousemove', function (e) {
+            self.cursor = {x: e.screenX, y: e.screenY};
+            self.update();
+        });
+    };
+
+    FTRP.Game.prototype.createLevel = function () {
         //debug
         this.ring = new FTRP.Ring(this.svgMain, this.center, [{value: 30, color: '#ff0000'}, {value: 50, color: '#00ff00'}, {value: 100, color: '#0000ff'}], 300, 280, 30);
         this.pie = new FTRP.Ring(this.svgMain, this.center, [{value: 30, color: '#ff0000'}, {value: 50, color: '#00ff00'}, {value: 100, color: '#0000ff'}], 260, 0, 180);
+        this.answer = {x: 100, y: 100};
     };
 
-    FTRP.Game.prototype.move = function (x, y) {
+    FTRP.Game.prototype.update = function () {
         var self = this;
         window.requestAnimationFrame(function () {
             self.ring.rotate(self.ring.rotation - 1);
@@ -131,9 +146,5 @@
     window.game = new FTRP.Game();
     window.addEventListener('load', function () {
         window.game.init('game');
-    });
-    window.addEventListener('mousemove', function (e) {
-        //console.log(e);
-        window.game.move(e.screenX, e.screenY);
     });
 }());
