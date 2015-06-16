@@ -94,6 +94,7 @@
         this.pie = null;
         this.width = null;
         this.height = null;
+        this.level = null;
         this.center = null;
         this.answer = null;
         this.cursor = null;
@@ -105,6 +106,7 @@
         this.svgMain = new SVG(id).size('100%', '100%');
         this.updateGeometry();
         this.setUpdateCallback();
+        this.level = 5;
         this.createLevel();
     };
 
@@ -129,24 +131,71 @@
         });
     };
 
+    FTRP.Game.prototype.createSectors = function () {
+        var sectors = [], i;
+        for (i = 0; i < this.level; i += 1) {
+            // Generate values from 20 - 100 with interval = 5
+            sectors[i] = (Math.floor(Math.random() * 17) + 4) * 5;
+        }
+        return sectors;
+    };
+
+    FTRP.Game.prototype.createColors = function () {
+        var colors = [], i, color_tones, color_start, color_step, color_i;
+        color_tones = [
+            {r: 0, g: 0, b: 0},
+            {r: 64, g: 0, b: 0},
+            {r: 0, g: 64, b: 0},
+            {r: 0, g: 0, b: 64},
+            {r: 64, g: 64, b: 0},
+            {r: 64, g: 0, b: 64},
+            {r: 0, g: 64, b: 64}
+        ];
+        // Generate start color and add random color tone
+        i = Math.floor(Math.random() * color_tones.length);
+        color_start = {
+            r: Math.floor(Math.random() * 32) + color_tones[i].r,
+            g: Math.floor(Math.random() * 32) + color_tones[i].g,
+            b: Math.floor(Math.random() * 32) + color_tones[i].b
+        };
+        // Generate color step for each sector
+        color_step = {
+            r: Math.floor((Math.random() * 128 + 128) / this.level),
+            g: Math.floor((Math.random() * 128 + 128) / this.level),
+            b: Math.floor((Math.random() * 128 + 128) / this.level)
+        };
+        // Generate the array of color strings
+        for (i = 0; i < this.level; i += 1) {
+            color_i = {
+                r: Math.min(color_start.r + color_step.r * i, 255),
+                g: Math.min(color_start.g + color_step.g * i, 255),
+                b: Math.min(color_start.b + color_step.b * i, 255)
+            };
+            colors[i] = "rgb(" + color_i.r + "," + color_i.g + "," + color_i.b + ")";
+        }
+        return colors;
+    };
+
     FTRP.Game.prototype.createLevel = function () {
         //debug
-        this.ring = new FTRP.Ring(this.svgMain, this.center, [30, 50, 100], ['#ff0000', '#00ff00', '#0000ff'], 300, 280, 30);
-        this.pie = new FTRP.Ring(this.svgMain, this.center, [30, 50, 100], ['#ff0000', '#00ff00', '#0000ff'], 260, 0, 180);
+        var sectors = this.createSectors(), colors = this.createColors();
+        console.log(sectors, colors);
+        this.ring = new FTRP.Ring(this.svgMain, this.center, sectors, colors, 300, 280, 30);
+        this.pie = new FTRP.Ring(this.svgMain, this.center, sectors, colors, 260, 0, 180);
         this.answer = {
-            x: Math.round(Math.random() * this.normalizeFactor),
-            y: Math.round(Math.random() * this.normalizeFactor)
+            x: Math.floor(Math.random() * this.normalizeFactor),
+            y: Math.floor(Math.random() * this.normalizeFactor)
         };
     };
 
     FTRP.Game.prototype.update = function () {
         var self = this, diff;
-        // Calculate the Manhattan distance 
+        // Calculate the Manhattan distance
         diff = Math.abs(this.answer.x - this.cursor.x) + Math.abs(this.answer.y - this.cursor.y);
         // Set rotation and sectors based on the difference between pie and ring
         this.pie.rotation = this.ring.rotation + 0.5 * diff;
         this.pie.sectors = this.pie.sectors.map(function (sector, index) {
-            return self.ring.sectors[index] + diff/(index + 1);
+            return self.ring.sectors[index] + 0.2 * diff * Math.abs(Math.sin(index * diff / self.normalizeFactor));
         });
         // Update the pie parameters
         console.log(this.cursor, diff, this.pie.rotation, this.pie.sectors);
