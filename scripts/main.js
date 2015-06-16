@@ -19,7 +19,8 @@
         this.innerRadius = innerRadius || 0;
         this.rotation = rotation || 0;
         // Draw the ring
-        this.draw();
+        this.drawSector();
+        this.drawInnerCircle();
         this.move();
         this.rotate();
     };
@@ -46,8 +47,15 @@
     FTRP.Ring.prototype.getNormalizedRadian = function (value, sum) {
         return Math.PI * 2 * value / sum;
     };
+    
+    FTRP.Ring.prototype.drawInnerCircle = function () {
+        // Draw inner circle
+        if (this.innerRadius > 0) {
+            this.svgInnerCircle.circle(this.innerRadius * 2).fill('#191919').center(0, 0);
+        }
+    };
 
-    FTRP.Ring.prototype.draw = function () {
+    FTRP.Ring.prototype.drawSector = function () {
         var self = this, sum = 0, startRadian = 0, endRadian = 0;
         this.sectors.forEach(function (sector) {
             sum += sector.value;
@@ -77,11 +85,6 @@
             // Update for next iteration
             startRadian = endRadian;
         });
-
-        // Draw inner circle
-        if (this.innerRadius > 0) {
-            this.svgInnerCircle.circle(this.innerRadius * 2).fill('#191919').center(0, 0);
-        }
     };
 
     // Game Class
@@ -103,17 +106,14 @@
         //debug
         this.ring = new FTRP.Ring(this.svgMain, this.center, [{value: 30, color: '#ff0000'}, {value: 50, color: '#00ff00'}, {value: 100, color: '#0000ff'}], 300, 280, 30);
         this.pie = new FTRP.Ring(this.svgMain, this.center, [{value: 30, color: '#ff0000'}, {value: 50, color: '#00ff00'}, {value: 100, color: '#0000ff'}], 260, 0, 180);
-        
-        var self = this;
-        setInterval(function () {
-            self.ring.rotate(self.ring.rotation + 1);
-            self.pie.rotate(self.pie.rotation - 1);
-        }, 20); 
     };
 
     FTRP.Game.prototype.move = function (x, y) {
-        this.ring.rotate(this.ring.rotation - 1);
-        this.pie.rotate(this.pie.rotation + 1);
+        var self = this;
+        requestAnimationFrame(function () {
+            self.ring.rotate(self.ring.rotation - 1);
+            self.pie.rotate(self.pie.rotation + 1);
+        });
     };
 
     // Create game instance and start
