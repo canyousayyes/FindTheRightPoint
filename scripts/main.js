@@ -91,6 +91,8 @@
         // Declare the parameters that decides the game behaviour
         this.sectorSize = null; // Number of sectors that should be generated
         this.gridSize = null; // Number of grids. The game screen is a grid with size (gridSize * gridSize)
+        this.rotationTolerance = null; // The tolerance in rotation angle between answer and cursor
+        this.sectorTolerance = null; // The tolerance in percentage of sector values between answer and cursor
 
         // Declare the variables that runs the game
         this.svgMain = null; // Main svg container for all game components
@@ -111,10 +113,12 @@
         this.setUpdateCallback();
         this.createLevel();
     };
-    
+
     FTRP.Game.prototype.loadParams = function () {
         this.sectorSize = 5;
         this.gridSize = 500;
+        this.rotationTolerance = 6;
+        this.sectorTolerance = 0.005;
     };
 
     FTRP.Game.prototype.updateGeometry = function () {
@@ -204,11 +208,32 @@
             return self.ring.sectors[index] + 0.2 * diff * Math.abs(Math.sin(index * diff / self.gridSize));
         });
         // Update the pie parameters
-        console.log(this.cursor, diff, this.pie.rotation, this.pie.sectors);
+        //console.log(this.cursor, diff, this.pie.rotation, this.pie.sectors);
         window.requestAnimationFrame(function () {
             self.pie.rotate();
             self.pie.drawSector();
         });
+        if (this.isWin()) {
+            console.log('win');
+        }
+    };
+
+    FTRP.Game.prototype.isWin = function () {
+        var self = this, rotationDiff, maxSectorDiff;
+        // Check rotation
+        rotationDiff = Math.abs(this.pie.rotation - this.ring.rotation);
+        // Check sector values
+        maxSectorDiff = 0;
+        this.ring.sectors.forEach(function (ringValue, index) {
+            var pieValue = self.pie.sectors[index], relativeDiff;
+            relativeDiff = (pieValue - ringValue) / ringValue;
+            maxSectorDiff = Math.max(maxSectorDiff, Math.abs(relativeDiff));
+        });
+
+        if ((rotationDiff < this.rotationTolerance) && (maxSectorDiff < this.sectorTolerance)) {
+            return true;
+        }
+        return false;
     };
 
     // Create game instance and start
