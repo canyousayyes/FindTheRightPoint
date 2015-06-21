@@ -95,6 +95,7 @@
         this.sectorTolerance = null; // The tolerance in percentage of sector values between answer and cursor
 
         // Declare the variables that runs the game
+        this.phase = null; // 'play': update the game control, 'pause': stop the game control
         this.svgMain = null; // Main svg container for all game components
         this.ring = null; // The Ring object that the the user has to mimic
         this.pie = null; // The Ring object that the user has to control
@@ -112,6 +113,11 @@
         this.updateGeometry();
         this.setUpdateCallback();
         this.createLevel();
+        this.setPhase('play');
+    };
+    
+    FTRP.Game.prototype.setPhase = function (phase) {
+        this.phase = phase;
     };
 
     FTRP.Game.prototype.loadParams = function () {
@@ -137,7 +143,12 @@
                 x: Math.round(e.clientX * self.gridSize / self.width),
                 y: Math.round(e.clientY * self.gridSize / self.height)
             };
-            self.update();
+            if (self.phase === 'play') {
+                self.render();
+                if (self.isWin()) {
+                    self.win();
+                }
+            }
         });
     };
 
@@ -187,9 +198,8 @@
     };
 
     FTRP.Game.prototype.createLevel = function () {
-        //debug
         var sectors = this.createSectors(), colors = this.createColors();
-        console.log(sectors, colors);
+        // TODO better method to set radii and rotation
         this.ring = new FTRP.Ring(this.svgMain, this.center, sectors, colors, 300, 280, 30);
         this.pie = new FTRP.Ring(this.svgMain, this.center, sectors, colors, 260, 0, 180);
         this.answer = {
@@ -198,7 +208,7 @@
         };
     };
 
-    FTRP.Game.prototype.update = function () {
+    FTRP.Game.prototype.render = function () {
         var self = this, diff;
         // Calculate the Manhattan distance
         diff = Math.abs(this.answer.x - this.cursor.x) + Math.abs(this.answer.y - this.cursor.y);
@@ -208,14 +218,10 @@
             return self.ring.sectors[index] + 0.2 * diff * Math.abs(Math.sin(index * diff / self.gridSize));
         });
         // Update the pie parameters
-        //console.log(this.cursor, diff, this.pie.rotation, this.pie.sectors);
         window.requestAnimationFrame(function () {
             self.pie.rotate();
             self.pie.drawSector();
         });
-        if (this.isWin()) {
-            console.log('win');
-        }
     };
 
     FTRP.Game.prototype.isWin = function () {
@@ -234,6 +240,20 @@
             return true;
         }
         return false;
+    };
+
+    FTRP.Game.prototype.win = function () {
+        var self = this;
+        this.setPhase('pause');
+        // Set the pie to match the ring
+        this.cursor = this.answer;
+        this.render();
+        // Start next level after some time
+        setTimeout(function () {
+            self.sectorSize++;
+            self.createLevel();
+            self.setPhase('play');
+        }, 1000);
     };
 
     // Create game instance and start
