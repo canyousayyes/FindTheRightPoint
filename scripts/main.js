@@ -52,6 +52,10 @@
         this.svgInnerCircle.radius(this.innerRadius).fill('#191919').center(this.center.x, this.center.y);
     };
 
+    FTRP.Ring.prototype.animateInnerCircle = function (radius, duration) {
+        this.svgInnerCircle.animate({duration: duration}).radius(radius);
+    };
+
     FTRP.Ring.prototype.drawSector = function () {
         var self = this, sum = 0, startRadian = 0, endRadian = 0;
         this.gpSector.clear();
@@ -245,12 +249,14 @@
         // Set the pie to match the ring
         this.cursor = this.answer;
         this.render();
+        // Set the ring to merge with the pie
+        this.ring.animateInnerCircle(250, 500);
         // Start next level after some time
         setTimeout(function () {
             self.sectorSize += 1;
             self.createLevel();
             self.setPhase('play');
-        }, 1000);
+        }, 1500);
     };
 
     // Create game instance and start
