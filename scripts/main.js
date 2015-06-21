@@ -9,9 +9,9 @@
     // Ring Class
     FTRP.Ring = function (container, center, sectors, colors, outerRadius, innerRadius, rotation) {
         // Create a svg group inside the container, don't draw directly inside
-        this.svgRing = container.group();
-        this.svgSector = this.svgRing.group();
-        this.svgInnerCircle = this.svgRing.group();
+        this.gpRing = container.group();
+        this.gpSector = this.gpRing.group();
+        this.svgInnerCircle = this.gpRing.ellipse(); // Using ellipse instead of circle for animation support
         this.center = center || {x: 0, y: 0};
         this.sectors = sectors || [];
         this.colors = colors || [];
@@ -29,19 +29,19 @@
         if (center !== undefined) {
             this.center = center;
         }
-        this.updateTransform();
+        this.updateSectorTransform();
     };
 
     FTRP.Ring.prototype.rotate = function (rotation) {
         if (rotation !== undefined) {
             this.rotation = rotation % 360;
         }
-        this.updateTransform();
+        this.updateSectorTransform();
     };
 
-    FTRP.Ring.prototype.updateTransform = function () {
+    FTRP.Ring.prototype.updateSectorTransform = function () {
         var transformString = "translate(" + this.center.x + "," + this.center.y + ") rotate(" + this.rotation + ",0,0)";
-        this.svgRing.attr({transform: transformString});
+        this.gpSector.attr({transform: transformString});
     };
 
     FTRP.Ring.prototype.getNormalizedRadian = function (value, sum) {
@@ -49,15 +49,12 @@
     };
 
     FTRP.Ring.prototype.drawInnerCircle = function () {
-        this.svgInnerCircle.clear();
-        if (this.innerRadius > 0) {
-            this.svgInnerCircle.circle(this.innerRadius * 2).fill('#191919').center(0, 0);
-        }
+        this.svgInnerCircle.radius(this.innerRadius).fill('#191919').center(this.center.x, this.center.y);
     };
 
     FTRP.Ring.prototype.drawSector = function () {
         var self = this, sum = 0, startRadian = 0, endRadian = 0;
-        this.svgSector.clear();
+        this.gpSector.clear();
         this.sectors.forEach(function (sector) {
             sum += sector;
         });
@@ -79,7 +76,7 @@
                     ((endRadian - startRadian > Math.PI) ? 1 : 0) + ',1 ' + x2 + ',' + y2 + ' z';
 
             // Draw sector
-            self.svgSector.path(d).fill(self.colors[index]);
+            self.gpSector.path(d).fill(self.colors[index]);
 
             // Update for next iteration
             startRadian = endRadian;
@@ -115,7 +112,7 @@
         this.createLevel();
         this.setPhase('play');
     };
-    
+
     FTRP.Game.prototype.setPhase = function (phase) {
         this.phase = phase;
     };
@@ -250,7 +247,7 @@
         this.render();
         // Start next level after some time
         setTimeout(function () {
-            self.sectorSize++;
+            self.sectorSize += 1;
             self.createLevel();
             self.setPhase('play');
         }, 1000);
