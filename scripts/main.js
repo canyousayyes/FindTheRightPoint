@@ -88,26 +88,33 @@
 
     // Game Class
     FTRP.Game = function () {
-        // Declare the variables
-        this.svgMain = null;
-        this.ring = null;
-        this.pie = null;
-        this.width = null;
-        this.height = null;
-        this.level = null;
-        this.center = null;
-        this.answer = null;
-        this.cursor = null;
-        this.normalizeFactor = null;
+        // Declare the parameters that decides the game behaviour
+        this.sectorSize = null; // Number of sectors that should be generated
+        this.gridSize = null; // Number of grids. The game screen is a grid with size (gridSize * gridSize)
+
+        // Declare the variables that runs the game
+        this.svgMain = null; // Main svg container for all game components
+        this.ring = null; // The Ring object that the the user has to mimic
+        this.pie = null; // The Ring object that the user has to control
+        this.width = null; // Width of the game screen
+        this.height = null; // Height of the game screen
+        this.center = null; // Object {x, y} for the center position of the game screen
+        this.answer = null; // Object {x, y} for the correct position
+        this.cursor = null; // Object {x, y} for the user cursor position
     };
 
     FTRP.Game.prototype.init = function (id) {
         // Called at the start, create everything we need for the game.
+        this.loadParams();
         this.svgMain = new SVG(id).size('100%', '100%');
         this.updateGeometry();
         this.setUpdateCallback();
-        this.level = 5;
         this.createLevel();
+    };
+    
+    FTRP.Game.prototype.loadParams = function () {
+        this.sectorSize = 5;
+        this.gridSize = 500;
     };
 
     FTRP.Game.prototype.updateGeometry = function () {
@@ -115,17 +122,16 @@
         this.width = rbox.width;
         this.height = rbox.height;
         this.center = {x: Math.round(this.width / 2), y: Math.round(this.height / 2)};
-        this.normalizeFactor = 500;
     };
 
     FTRP.Game.prototype.setUpdateCallback = function () {
         var self = this;
         window.addEventListener('mousemove', function (e) {
             // Normalize cursor position
-            // Upper Left: (0,0) Bottom right: (normalizeFactor, normalizeFactor)
+            // Upper Left: (0,0) Bottom right: (gridSize, gridSize)
             self.cursor = {
-                x: Math.round(e.clientX * self.normalizeFactor / self.width),
-                y: Math.round(e.clientY * self.normalizeFactor / self.height)
+                x: Math.round(e.clientX * self.gridSize / self.width),
+                y: Math.round(e.clientY * self.gridSize / self.height)
             };
             self.update();
         });
@@ -133,7 +139,7 @@
 
     FTRP.Game.prototype.createSectors = function () {
         var sectors = [], i;
-        for (i = 0; i < this.level; i += 1) {
+        for (i = 0; i < this.sectorSize; i += 1) {
             // Generate values from 20 - 100 with interval = 5
             sectors[i] = (Math.floor(Math.random() * 17) + 4) * 5;
         }
@@ -160,12 +166,12 @@
         };
         // Generate color step for each sector
         color_step = {
-            r: Math.floor((Math.random() * 128 + 128) / this.level),
-            g: Math.floor((Math.random() * 128 + 128) / this.level),
-            b: Math.floor((Math.random() * 128 + 128) / this.level)
+            r: Math.floor((Math.random() * 128 + 128) / this.sectorSize),
+            g: Math.floor((Math.random() * 128 + 128) / this.sectorSize),
+            b: Math.floor((Math.random() * 128 + 128) / this.sectorSize)
         };
         // Generate the array of color strings
-        for (i = 0; i < this.level; i += 1) {
+        for (i = 0; i < this.sectorSize; i += 1) {
             color_i = {
                 r: Math.min(color_start.r + color_step.r * i, 255),
                 g: Math.min(color_start.g + color_step.g * i, 255),
@@ -183,8 +189,8 @@
         this.ring = new FTRP.Ring(this.svgMain, this.center, sectors, colors, 300, 280, 30);
         this.pie = new FTRP.Ring(this.svgMain, this.center, sectors, colors, 260, 0, 180);
         this.answer = {
-            x: Math.floor(Math.random() * this.normalizeFactor),
-            y: Math.floor(Math.random() * this.normalizeFactor)
+            x: Math.floor(Math.random() * this.gridSize),
+            y: Math.floor(Math.random() * this.gridSize)
         };
     };
 
@@ -194,8 +200,8 @@
         diff = Math.abs(this.answer.x - this.cursor.x) + Math.abs(this.answer.y - this.cursor.y);
         // Set rotation and sectors based on the difference between pie and ring
         this.pie.rotation = this.ring.rotation + 0.5 * diff;
-        this.pie.sectors = this.pie.sectors.map(function (sector, index) {
-            return self.ring.sectors[index] + 0.2 * diff * Math.abs(Math.sin(index * diff / self.normalizeFactor));
+        this.pie.sectors = this.pie.sectors.map(function (ignore, index) {
+            return self.ring.sectors[index] + 0.2 * diff * Math.abs(Math.sin(index * diff / self.gridSize));
         });
         // Update the pie parameters
         console.log(this.cursor, diff, this.pie.rotation, this.pie.sectors);
